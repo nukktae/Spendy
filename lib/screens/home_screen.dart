@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/localization_provider.dart';
 import '../widgets/modern_card.dart';
 import 'add_transaction_screen.dart';
 
@@ -12,6 +13,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transactions = ref.watch(transactionsProvider);
     final notifier = ref.read(transactionsProvider.notifier);
+    final t = ref.watch(localizationProvider);
     
     final totalBalance = notifier.totalBalance;
     final totalIncome = notifier.totalIncome;
@@ -21,7 +23,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Money Tracker AI',
+          t('general.appName'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -40,24 +42,24 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome back!',
+                t('home.welcome'),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Track your expenses with AI',
+                t('home.subtitle'),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
               const SizedBox(height: 24),
-              _buildBalanceCard(context, totalBalance, totalIncome, totalExpenses),
+              _buildBalanceCard(context, totalBalance, totalIncome, totalExpenses, t),
               const SizedBox(height: 24),
-              _buildQuickActions(context),
+              _buildQuickActions(context, t),
               const SizedBox(height: 24),
-              _buildRecentTransactions(context, recentTransactions),
+              _buildRecentTransactions(context, recentTransactions, t),
             ],
           ),
         ),
@@ -77,20 +79,20 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceCard(BuildContext context, double totalBalance, double totalIncome, double totalExpenses) {
+  Widget _buildBalanceCard(BuildContext context, double totalBalance, double totalIncome, double totalExpenses, String Function(String) t) {
     return ModernCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Total Balance',
+            t('home.totalBalance'),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            '\$${totalBalance.toStringAsFixed(2)}',
+            '₮${totalBalance.toStringAsFixed(2)}',
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -102,14 +104,14 @@ class HomeScreen extends ConsumerWidget {
             children: [
               _buildBalanceItem(
                 context,
-                'Income',
-                '\$${totalIncome.toStringAsFixed(2)}',
+                t('home.income'),
+                '₮${totalIncome.toStringAsFixed(2)}',
                 Theme.of(context).colorScheme.primary,
               ),
               _buildBalanceItem(
                 context,
-                'Expenses',
-                '\$${totalExpenses.toStringAsFixed(2)}',
+                t('home.expenses'),
+                '₮${totalExpenses.toStringAsFixed(2)}',
                 Theme.of(context).colorScheme.error,
               ),
             ],
@@ -141,12 +143,12 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, String Function(String) t) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick Actions',
+          t('home.quickActions'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -174,7 +176,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Add Income',
+                      t('home.addIncome'),
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
@@ -202,7 +204,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Add Expense',
+                      t('home.addExpense'),
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
@@ -215,12 +217,12 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecentTransactions(BuildContext context, List<Transaction> recentTransactions) {
+  Widget _buildRecentTransactions(BuildContext context, List<Transaction> recentTransactions, String Function(String) t) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recent Transactions',
+          t('home.recentTransactions'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -254,12 +256,12 @@ class HomeScreen extends ConsumerWidget {
                         ),
                   ),
                   trailing: Text(
-                    '\$${transaction.amount.toStringAsFixed(2)}',
+                    '₮${transaction.amount.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
                           color: transaction.isIncome
                               ? Theme.of(context).colorScheme.primary
                               : Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.bold,
                         ),
                   ),
                 ),

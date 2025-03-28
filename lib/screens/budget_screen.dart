@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/budget.dart';
 import '../providers/budget_provider.dart';
+import '../providers/localization_provider.dart';
 import '../widgets/modern_card.dart';
 
 class BudgetScreen extends ConsumerWidget {
@@ -12,11 +13,12 @@ class BudgetScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final budgets = ref.watch(budgetsProvider);
     final budgetStatus = ref.read(budgetsProvider.notifier).getBudgetStatus();
+    final t = ref.watch(localizationProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Budgets',
+          t('budget.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -24,7 +26,7 @@ class BudgetScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: budgetStatus.isEmpty
-            ? _buildEmptyState(context)
+            ? _buildEmptyState(context, t)
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: budgetStatus.length,
@@ -32,7 +34,7 @@ class BudgetScreen extends ConsumerWidget {
                   final status = budgetStatus[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: _buildBudgetCard(context, status),
+                    child: _buildBudgetCard(context, status, t),
                   );
                 },
               ),
@@ -40,12 +42,12 @@ class BudgetScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddBudgetDialog(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add Budget'),
+        label: Text(t('budget.addBudget')),
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, String Function(String) t) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -57,14 +59,14 @@ class BudgetScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No Budgets Set',
+            t('budget.noBudgets'),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Start managing your expenses by setting\ncategory-wise budgets',
+            t('budget.emptyStateMessage'),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -75,7 +77,7 @@ class BudgetScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBudgetCard(BuildContext context, Map<String, dynamic> status) {
+  Widget _buildBudgetCard(BuildContext context, Map<String, dynamic> status, String Function(String) t) {
     final budget = status['budget'] as Budget;
     final spent = status['spent'] as double;
     final progress = status['progress'] as double;
@@ -124,7 +126,7 @@ class BudgetScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isActive ? 'Active' : 'Expired',
+                  isActive ? t('budget.active') : t('budget.expired'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isActive
                             ? Theme.of(context).colorScheme.primary
@@ -150,13 +152,13 @@ class BudgetScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '\$${spent.toStringAsFixed(2)} spent',
+                '₮${spent.toStringAsFixed(2)} ${t('budget.spent')}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
               Text(
-                'of \$${budget.amount.toStringAsFixed(2)}',
+                '${t('budget.of')} ₮${budget.amount.toStringAsFixed(2)}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -182,8 +184,8 @@ class BudgetScreen extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       isOverBudget
-                          ? 'You have exceeded your budget!'
-                          : 'You are close to your budget limit',
+                          ? t('budget.overBudgetWarning')
+                          : t('budget.nearBudgetWarning'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: progressColor,
                             fontWeight: FontWeight.w500,
@@ -242,6 +244,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final t = ref.watch(localizationProvider);
     return Padding(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -256,7 +259,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Add New Budget',
+              t('budget.addNewBudget'),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -264,13 +267,13 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
             const SizedBox(height: 24),
             TextFormField(
               controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                hintText: 'e.g., Groceries, Entertainment',
+              decoration: InputDecoration(
+                labelText: t('budget.category'),
+                border: const OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter a category';
+                  return t('budget.categoryRequired');
                 }
                 return null;
               },
@@ -278,110 +281,56 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _amountController,
-              decoration: const InputDecoration(
-                labelText: 'Budget Amount',
-                prefixText: '\$',
+              decoration: InputDecoration(
+                labelText: t('budget.amount'),
+                border: const OutlineInputBorder(),
+                prefixText: '₮',
               ),
               keyboardType: TextInputType.number,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter an amount';
+                  return t('budget.amountRequired');
                 }
                 if (double.tryParse(value) == null) {
-                  return 'Please enter a valid number';
+                  return t('budget.invalidAmount');
                 }
                 return null;
               },
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Start Date'),
-                    subtitle: Text(DateFormat('MMM d, y').format(_startDate)),
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _startDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        setState(() => _startDate = date);
-                      }
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('End Date'),
-                    subtitle: Text(DateFormat('MMM d, y').format(_endDate)),
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _endDate,
-                        firstDate: _startDate,
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        setState(() => _endDate = date);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
             SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Enable Notifications'),
-              subtitle: const Text('Get alerts when nearing budget limit'),
+              title: Text(t('budget.enableNotifications')),
               value: _notificationsEnabled,
-              onChanged: (value) => setState(() => _notificationsEnabled = value),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Warning Threshold: ${_warningThreshold.toInt()}%',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            Slider(
-              value: _warningThreshold,
-              min: 50,
-              max: 90,
-              divisions: 4,
-              label: '${_warningThreshold.toInt()}%',
-              onChanged: (value) => setState(() => _warningThreshold = value),
+              onChanged: (value) {
+                setState(() {
+                  _notificationsEnabled = value;
+                });
+              },
             ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
-                onPressed: _saveBudget,
-                child: const Text('Save Budget'),
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    final budget = Budget(
+                      category: _categoryController.text,
+                      amount: double.parse(_amountController.text),
+                      startDate: _startDate,
+                      endDate: _endDate,
+                      notificationsEnabled: _notificationsEnabled,
+                      warningThreshold: _warningThreshold,
+                    );
+                    ref.read(budgetsProvider.notifier).addBudget(budget);
+                    Navigator.pop(context);
+                  }
+                },
+                child: Text(t('budget.save')),
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _saveBudget() {
-    if (_formKey.currentState!.validate()) {
-      final budget = Budget(
-        category: _categoryController.text,
-        amount: double.parse(_amountController.text),
-        startDate: _startDate,
-        endDate: _endDate,
-        notificationsEnabled: _notificationsEnabled,
-        warningThreshold: _warningThreshold,
-      );
-
-      ref.read(budgetsProvider.notifier).addBudget(budget);
-      Navigator.pop(context);
-    }
   }
 } 

@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
+import '../providers/localization_provider.dart';
 import '../widgets/modern_card.dart';
 import '../theme/app_theme.dart';
 
@@ -13,6 +14,7 @@ class AnalyticsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactions = ref.watch(transactionsProvider);
+    final t = ref.watch(localizationProvider);
 
     // Get current month's transactions
     final currentMonthTransactions = transactions.where((t) {
@@ -23,7 +25,7 @@ class AnalyticsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Analytics',
+          t('analytics.title'),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -35,9 +37,9 @@ class AnalyticsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInsights(context, currentMonthTransactions),
+              _buildInsights(context, currentMonthTransactions, t),
               const SizedBox(height: 24),
-              _buildSpendingTrends(context, transactions),
+              _buildSpendingTrends(context, transactions, t),
             ],
           ),
         ),
@@ -45,7 +47,7 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSpendingTrends(BuildContext context, List<Transaction> transactions) {
+  Widget _buildSpendingTrends(BuildContext context, List<Transaction> transactions, String Function(String) t) {
     // Group transactions by day
     final dailySpending = <DateTime, double>{};
     final now = DateTime.now();
@@ -80,7 +82,7 @@ class AnalyticsScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Daily Spending',
+                    t('analytics.dailySpending'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -100,7 +102,7 @@ class AnalyticsScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'This Month',
+                  t('analytics.thisMonth'),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w500,
@@ -148,7 +150,7 @@ class AnalyticsScreen extends ConsumerWidget {
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: Text(
-                            '\$${value.toInt()}',
+                            '₮${value.toInt()}',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
@@ -201,7 +203,7 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInsights(BuildContext context, List<Transaction> transactions) {
+  Widget _buildInsights(BuildContext context, List<Transaction> transactions, String Function(String) t) {
     // Calculate insights
     final totalSpending = transactions.where((t) => !t.isIncome).fold<double>(
           0,
@@ -227,7 +229,7 @@ class AnalyticsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Monthly Insights',
+            t('analytics.monthlyInsights'),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -241,8 +243,8 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
             child: _buildInsightItem(
               context,
-              'Average Daily Spending',
-              '\$${averageSpending.toStringAsFixed(2)}',
+              t('analytics.averageDailySpending'),
+              '₮${averageSpending.toStringAsFixed(2)}',
               Icons.calendar_today,
             ),
           ),
@@ -250,26 +252,26 @@ class AnalyticsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.error.withAlpha(12),
+              color: Theme.of(context).colorScheme.primary.withAlpha(12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: _buildInsightItem(
               context,
-              'Largest Expense',
-              '\$${mostExpensiveTransaction.amount.toStringAsFixed(2)} - ${mostExpensiveTransaction.title}',
-              Icons.arrow_upward,
+              t('analytics.mostExpensiveTransaction'),
+              '₮${mostExpensiveTransaction.amount.toStringAsFixed(2)}',
+              Icons.attach_money,
             ),
           ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondary.withAlpha(12),
+              color: Theme.of(context).colorScheme.primary.withAlpha(12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: _buildInsightItem(
               context,
-              'Most Frequent Category',
+              t('analytics.mostFrequentCategory'),
               mostFrequentCategory,
               Icons.category,
             ),
@@ -279,12 +281,7 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInsightItem(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-  ) {
+  Widget _buildInsightItem(BuildContext context, String title, String value, IconData icon) {
     return Row(
       children: [
         Icon(
@@ -308,6 +305,7 @@ class AnalyticsScreen extends ConsumerWidget {
                 value,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
               ),
             ],
