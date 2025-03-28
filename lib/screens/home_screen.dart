@@ -1,92 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'models/transaction.dart';
-import 'providers/transaction_provider.dart';
-import 'screens/add_transaction_screen.dart';
-import 'theme/app_theme.dart';
-import 'widgets/modern_card.dart';
-import 'screens/home_screen.dart';
-import 'screens/analytics_screen.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
-  
-  // Initialize Hive
-  await Hive.initFlutter();
-  
-  // Register Hive adapters
-  Hive.registerAdapter(TransactionAdapter());
-  final box = await Hive.openBox<Transaction>('transactions');
-  
-  runApp(ProviderScope(
-    overrides: [
-      transactionBoxProvider.overrideWithValue(box),
-    ],
-    child: const MoneyTrackerApp(),
-  ));
-}
-
-class MoneyTrackerApp extends ConsumerStatefulWidget {
-  const MoneyTrackerApp({super.key});
-
-  @override
-  ConsumerState<MoneyTrackerApp> createState() => _MoneyTrackerAppState();
-}
-
-class _MoneyTrackerAppState extends ConsumerState<MoneyTrackerApp> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const AnalyticsScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Money Tracker AI',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      home: Scaffold(
-        body: _screens[_selectedIndex],
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.analytics_outlined),
-              selectedIcon: Icon(Icons.analytics),
-              label: 'Analytics',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../models/transaction.dart';
+import '../providers/transaction_provider.dart';
+import '../widgets/modern_card.dart';
+import 'add_transaction_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the transactions state to trigger rebuilds
     final transactions = ref.watch(transactionsProvider);
     final notifier = ref.read(transactionsProvider.notifier);
     
@@ -121,14 +44,14 @@ class HomeScreen extends ConsumerWidget {
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
-              ).animate().fadeIn().slideX(),
+              ),
               const SizedBox(height: 8),
               Text(
                 'Track your expenses with AI',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-              ).animate().fadeIn().slideX(),
+              ),
               const SizedBox(height: 24),
               _buildBalanceCard(context, totalBalance, totalIncome, totalExpenses),
               const SizedBox(height: 24),
@@ -345,4 +268,4 @@ class HomeScreen extends ConsumerWidget {
       ],
     );
   }
-}
+} 
