@@ -4,78 +4,102 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/transaction.dart';
+import 'models/budget.dart';
 import 'providers/transaction_provider.dart';
+import 'providers/budget_provider.dart';
 import 'screens/add_transaction_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/modern_card.dart';
 import 'screens/home_screen.dart';
 import 'screens/analytics_screen.dart';
+import 'screens/budget_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
-  
   // Initialize Hive
   await Hive.initFlutter();
   
-  // Register Hive adapters
+  // Register adapters
   Hive.registerAdapter(TransactionAdapter());
-  final box = await Hive.openBox<Transaction>('transactions');
+  Hive.registerAdapter(BudgetAdapter());
   
-  runApp(ProviderScope(
-    overrides: [
-      transactionBoxProvider.overrideWithValue(box),
-    ],
-    child: const MoneyTrackerApp(),
-  ));
+  // Open boxes
+  final transactionBox = await Hive.openBox<Transaction>('transactions');
+  final budgetBox = await Hive.openBox<Budget>('budgets');
+  
+  // Load environment variables
+  await dotenv.load();
+  
+  runApp(
+    ProviderScope(
+      overrides: [
+        transactionBoxProvider.overrideWithValue(transactionBox),
+        budgetBoxProvider.overrideWithValue(budgetBox),
+      ],
+      child: const MoneyTrackerApp(),
+    ),
+  );
 }
 
-class MoneyTrackerApp extends ConsumerStatefulWidget {
+class MoneyTrackerApp extends ConsumerWidget {
   const MoneyTrackerApp({super.key});
 
   @override
-  ConsumerState<MoneyTrackerApp> createState() => _MoneyTrackerAppState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      title: 'Money Tracker',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      home: const MainScreen(),
+    );
+  }
 }
 
-class _MoneyTrackerAppState extends ConsumerState<MoneyTrackerApp> {
+class MainScreen extends ConsumerStatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  ConsumerState<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends ConsumerState<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const AnalyticsScreen(),
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    AnalyticsScreen(),
+    BudgetScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Money Tracker AI',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      home: Scaffold(
-        body: _screens[_selectedIndex],
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.analytics_outlined),
-              selectedIcon: Icon(Icons.analytics),
-              label: 'Analytics',
-            ),
-          ],
-        ),
+    return Scaffold(
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.analytics_outlined),
+            selectedIcon: Icon(Icons.analytics),
+            label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Budget',
+          ),
+        ],
       ),
     );
   }
